@@ -1,26 +1,379 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --color-canvas: #f7f5ef;
+  --color-canvas-soft: #efeee7;
+  --color-ink: #0f2027;
+  --color-ink-soft: #314048;
+  --color-ink-muted: #5a6a72;
+  --color-primary: #0f4c5c;
+  --color-primary-soft: #1d6c7f;
+  --color-accent: #e36f5a;
+  --color-accent-soft: #f3a78f;
+  --color-mint: #d7ebe1;
+  --color-sky: #d9e6ee;
+  --color-peach: #fbe2d4;
+  --color-line: rgba(15, 32, 39, 0.08);
+  --color-line-strong: rgba(15, 32, 39, 0.16);
+
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+
+  --shadow-soft: 0 1px 2px rgba(15, 32, 39, 0.04),
+    0 12px 32px -16px rgba(15, 32, 39, 0.12);
+  --shadow-lift: 0 1px 2px rgba(15, 32, 39, 0.04),
+    0 30px 60px -28px rgba(15, 32, 39, 0.22);
+
+  --radius-card: 1.25rem;
+  --radius-pill: 999px;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-body), system-ui, sans-serif;
+  position: relative;
+  overflow-x: hidden;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--color-ink);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+p { max-width: 70ch; }
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display), system-ui, sans-serif;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  text-wrap: balance;
+}
+
+.font-display {
+  font-family: var(--font-display), system-ui, sans-serif;
+  letter-spacing: -0.015em;
+}
+
+.font-body {
+  font-family: var(--font-body), system-ui, sans-serif;
+}
+
+/* Page-wide ambient light gradient — sits behind every page */
+.ambient-gradient {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(60% 50% at 0% 0%, rgba(215, 235, 225, 0.65), transparent 60%),
+    radial-gradient(55% 50% at 100% 0%, rgba(251, 226, 212, 0.55), transparent 65%),
+    radial-gradient(70% 60% at 50% 100%, rgba(217, 230, 238, 0.7), transparent 70%),
+    linear-gradient(180deg, #f9f7f1 0%, #f7f5ef 60%, #f1ede4 100%);
+}
+
+.grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.07;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.6 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+
+/* Subtle entrance for hero stack */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.rise { animation: rise 0.9s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.rise-1 { animation-delay: 0.05s; }
+.rise-2 { animation-delay: 0.18s; }
+.rise-3 { animation-delay: 0.32s; }
+.rise-4 { animation-delay: 0.46s; }
+.fade-in { animation: fade 1.2s ease-out both; }
+
+/* ─── Scroll-reveal (driven by IntersectionObserver via <Reveal/>) ─── */
+.reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 0.9s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+}
+.reveal[data-shown="true"] {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Staggered children — siblings inside a .reveal-stagger get incremental delays */
+.reveal-stagger > * {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.reveal-stagger[data-shown="true"] > * {
+  opacity: 1;
+  transform: translateY(0);
+}
+.reveal-stagger[data-shown="true"] > *:nth-child(1) { transition-delay: 0.05s; }
+.reveal-stagger[data-shown="true"] > *:nth-child(2) { transition-delay: 0.14s; }
+.reveal-stagger[data-shown="true"] > *:nth-child(3) { transition-delay: 0.23s; }
+.reveal-stagger[data-shown="true"] > *:nth-child(4) { transition-delay: 0.32s; }
+.reveal-stagger[data-shown="true"] > *:nth-child(5) { transition-delay: 0.41s; }
+.reveal-stagger[data-shown="true"] > *:nth-child(6) { transition-delay: 0.50s; }
+
+/* ─── Ken-burns: very slow zoom + pan on hero image ─── */
+@keyframes kenburns {
+  0%   { transform: scale(1.06) translate(0%, 0%); }
+  50%  { transform: scale(1.12) translate(-1.4%, -0.6%); }
+  100% { transform: scale(1.06) translate(0%, 0%); }
+}
+.kenburns {
+  animation: kenburns 22s ease-in-out infinite;
+  transform-origin: center;
+}
+
+/* ─── Marquee for the client logo strip ─── */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.marquee-track {
+  animation: marquee 38s linear infinite;
+  width: max-content;
+}
+.marquee:hover .marquee-track { animation-play-state: paused; }
+
+/* ─── Soft drift used on decorative blobs ─── */
+@keyframes drift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(2.5%, -3%) scale(1.04); }
+}
+.drift { animation: drift 16s ease-in-out infinite; }
+
+@keyframes drift-alt {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(-3%, 2%) scale(1.06); }
+}
+.drift-alt { animation: drift-alt 21s ease-in-out infinite; }
+
+/* ─── Floating pill / arrow nudge ─── */
+@keyframes nudge {
+  0%, 100% { transform: translateX(0); }
+  50%      { transform: translateX(3px); }
+}
+.btn-primary:hover svg,
+.btn-ghost:hover svg {
+  animation: nudge 0.8s ease-in-out infinite;
+}
+
+/* ─── Vertical scroll cue ─── */
+@keyframes scroll-cue {
+  0%   { transform: translateY(-40%); opacity: 0; }
+  35%  { opacity: 1; }
+  100% { transform: translateY(140%); opacity: 0; }
+}
+.scroll-cue::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  height: 35%;
+  width: 1px;
+  background: currentColor;
+  transform: translateX(-50%);
+  animation: scroll-cue 2.2s cubic-bezier(0.55, 0, 0.45, 1) infinite;
+}
+
+/* ─── Line draw-in (left → right) ─── */
+@keyframes draw-x {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+.draw-x {
+  transform-origin: left center;
+  animation: draw-x 1.1s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both;
+}
+
+/* ─── Editorial rotated label ─── */
+.vlabel {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+}
+
+/* ─── Scarf / silk ribbon flow (used on Trust Stats Strip) ─── */
+@keyframes ribbon-flow-a {
+  0%, 100% { transform: translate3d(0, 0, 0) skewY(-1.2deg); }
+  50%      { transform: translate3d(-2%, -1.5%, 0) skewY(-2.4deg); }
+}
+@keyframes ribbon-flow-b {
+  0%, 100% { transform: translate3d(0, 0, 0) skewY(1.6deg); }
+  50%      { transform: translate3d(1.5%, 1%, 0) skewY(3deg); }
+}
+@keyframes ribbon-flow-c {
+  0%, 100% { transform: translate3d(0, 0, 0) skewY(-2deg); }
+  50%      { transform: translate3d(-1%, 2%, 0) skewY(-3.4deg); }
+}
+.ribbon-a { animation: ribbon-flow-a 14s cubic-bezier(0.4, 0, 0.6, 1) infinite; transform-origin: center; }
+.ribbon-b { animation: ribbon-flow-b 18s cubic-bezier(0.4, 0, 0.6, 1) infinite; transform-origin: center; }
+.ribbon-c { animation: ribbon-flow-c 22s cubic-bezier(0.4, 0, 0.6, 1) infinite; transform-origin: center; }
+
+/* ─── Slowly rotating seal (used on the Money-Back stamp) ─── */
+@keyframes seal-spin {
+  to { transform: rotate(360deg); }
+}
+.seal-spin {
+  animation: seal-spin 36s linear infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+/* ─── Reduced motion: turn everything calm. ─── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .reveal, .reveal-stagger > * {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+/* Glass surface used on the hero form card */
+.glass {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.78),
+    rgba(255, 255, 255, 0.62)
+  );
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow: var(--shadow-lift);
+}
+
+/* Thin keyline that picks up gradient on hover */
+.keyline {
+  border: 1px solid var(--color-line);
+  transition: border-color 0.25s ease, transform 0.25s ease,
+    box-shadow 0.25s ease, background-color 0.25s ease;
+}
+.keyline:hover {
+  border-color: var(--color-line-strong);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-soft);
+}
+
+/* Form field defaults — refined, not chunky */
+.field {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(15, 32, 39, 0.1);
+  border-radius: 0.65rem;
+  padding: 0.7rem 0.9rem;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  color: var(--color-ink);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease,
+    background-color 0.2s ease;
+}
+.field::placeholder { color: rgba(15, 32, 39, 0.4); }
+.field:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px rgba(15, 76, 92, 0.12);
+  background: #fff;
+}
+
+.label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+}
+
+/* Primary CTA */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.2rem;
+  border-radius: var(--radius-pill);
+  background: var(--color-ink);
+  color: var(--color-canvas);
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 0.875rem;
+  letter-spacing: -0.01em;
+  transition: transform 0.25s ease, background-color 0.25s ease;
+}
+.btn-primary:hover {
+  background: var(--color-primary);
+  transform: translateY(-1px);
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.2rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-line-strong);
+  color: var(--color-ink);
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 0.875rem;
+  transition: background-color 0.25s ease, border-color 0.25s ease;
+}
+.btn-ghost:hover {
+  background: rgba(15, 32, 39, 0.04);
+  border-color: var(--color-ink);
+}
+
+/* Section eyebrow */
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-primary);
+}
+.eyebrow::before {
+  content: "";
+  width: 28px;
+  height: 1px;
+  background: var(--color-primary);
+}
+
+/* Numbered tile */
+.tile-number {
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: 0.78rem;
+  letter-spacing: 0.2em;
+  color: var(--color-ink-muted);
 }
